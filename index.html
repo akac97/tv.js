@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video.js Live Streaming</title>
+    <!-- Video.js CSS from UNPKG -->
+    <link href="https://unpkg.com/video.js@latest/dist/video-js.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #121212; /* Dark background */
+            color: #fff; /* Maximal white text color */
+        }
+        #sidebar {
+            width: 100%;
+            max-width: 250px; /* Adjusted width */
+            background: #1e1e1e; /* Dark sidebar background */
+            padding: 15px; /* Adjusted padding */
+            box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+        #sidebar .channel-item {
+            font-size: 1.5em; /* Larger font size */
+            padding: 15px 20px; /* Larger padding */
+            color: #fff; /* Maximal white text color */
+            background-color: #1e1e1e; /* Dark background for items */
+            border: 1px solid transparent;
+            border-radius: 4px;
+            transition: background-color 0.3s, border-color 0.3s;
+            cursor: pointer; /* Indicate item is clickable */
+        }
+        #sidebar .channel-item.active {
+            background-color: #333; /* Slightly lighter dark for active item */
+            border-color: #666; /* Border color for active item */
+        }
+        #sidebar .channel-item:hover,
+        #sidebar .channel-item:focus {
+            background-color: #333; /* Hover effect */
+            border-radius: 4px;
+            outline: none; /* Remove default focus outline */
+            border: 2px solid #666; /* Custom focus outline */
+        }
+        #main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        #video-container {
+            flex-grow: 1;
+            position: relative;
+        }
+        #video-player {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 100%;
+                max-width: none;
+                height: auto;
+                box-shadow: none;
+                position: relative;
+                z-index: 1;
+            }
+            #main-content {
+                flex-direction: column;
+            }
+            #sidebar .channel-item {
+                font-size: 1.2em; /* Adjust font size for smaller screens */
+                padding: 10px 15px; /* Adjust padding for smaller screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar" role="navigation" aria-label="Channel List">
+        <!-- Channel list with data-src for main source -->
+        <div class="channel-item" data-src="https://streaming.skynetconnect.online/live/210.m3u8" role="button" tabindex="0" aria-label="Pervy Kanal">Pervy Kanal</div>
+        <div class="channel-item" data-src="https://player.smotrim.ru/iframe/stream/live_id/2961" role="button" tabindex="0" aria-label="Russia 1">Russia 1</div>
+        <div class="channel-item" data-src="https://tvchannelstream1.tvzvezda.ru/cdn/tvzvezda/playlist.m3u8" role="button" tabindex="0" aria-label="Zvezda">Zvezda</div>
+        <div class="channel-item" data-src="https://player.smotrim.ru/iframe/stream/live_id/21" role="button" tabindex="0" aria-label="Russia 24">Russia 24</div>
+        <div class="channel-item" data-src="https://player.smotrim.ru/iframe/stream/live_id/63254" role="button" tabindex="0" aria-label="Russia RTR">Russia RTR</div>
+        <div class="channel-item" data-src="https://player.smotrim.ru/iframe/stream/live_id/63254" role="button" tabindex="0" aria-label="Planeta RTR">Planeta RTR</div>
+        <div class="channel-item" data-src="https://player.smotrim.ru/iframe/stream/live_id/63338" role="button" tabindex="0" aria-label="Solovyov Live">Solovyov Live</div>
+        <div class="channel-item" data-src="https://ngtrk.dc.beltelecom.by/ngtrk/smil:belarus1.smil/playlist.m3u8" role="button" tabindex="0" aria-label="belarus 1">belarus 1</div> 
+        <div class="channel-item" data-src="https://ngtrk.dc.beltelecom.by/ngtrk/smil:belarus24.smil/playlist.m3u8" role="button" tabindex="0" aria-label="belarus 24">belarus 24</div>
+    </div>
+    <div id="main-content">
+        <div id="video-container">
+            <video id="video-player" class="video-js vjs-default-skin" controls preload="auto">
+                <!-- Default source (can be updated dynamically) -->
+                <source src="" type="application/x-mpegURL">
+            </video>
+        </div>
+    </div>
+
+    <!-- Video.js and its dependencies from UNPKG -->
+    <script src="https://unpkg.com/video.js@latest/dist/video.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var player = videojs('video-player', {
+                autoplay: true,
+                preload: 'auto'
+            });
+
+            player.volume(1.0);
+
+            player.on('loadedmetadata', function () {
+                var tracks = player.textTracks();
+                for (var i = 0; i < tracks.length; i++) {
+                    tracks[i].mode = 'disabled';
+                }
+            });
+
+            var channelItems = document.querySelectorAll('.channel-item');
+            var currentChannel = null;
+
+            function loadChannel(channelItem) {
+                var mainSrc = channelItem.getAttribute('data-src');
+
+                player.src({ type: 'application/x-mpegURL', src: mainSrc });
+                player.play();
+
+                document.querySelectorAll('.channel-item').forEach(function(item) {
+                    item.classList.remove('active');
+                });
+                channelItem.classList.add('active');
+            }
+
+            channelItems.forEach(function (item) {
+                item.addEventListener('click', function () {
+                    if (currentChannel !== item) {
+                        currentChannel = item;
+                        loadChannel(item);
+                    }
+                });
+                item.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        if (currentChannel !== item) {
+                            currentChannel = item;
+                            loadChannel(item);
+                        }
+                    }
+                });
+            });
+
+            if (channelItems.length > 0) {
+                loadChannel(channelItems[0]);
+            }
+        });
+    </script>
+</body>
+</html>
